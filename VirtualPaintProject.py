@@ -54,6 +54,9 @@ while True:
         drawPoints(imgResult, points)
     cv2.imshow("Result", imgResult)
 
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
 
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
