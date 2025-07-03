@@ -34,7 +34,7 @@ def preprocess(img):
     return {"Resized" : img ,"Gray" : imgGray, "Blur" : imgBlur, "Canny" : imgCanny, "Dial" : imgDial, "Threshold" : imgThreshold}
 
 #############################################################################################################
-def getContours(img, imgContour):
+def getContours(img):
     biggest = np.array([])
     maxArea = 0
 
@@ -47,30 +47,32 @@ def getContours(img, imgContour):
             if area > maxArea and len(approx) == 4:
                 biggest = approx
                 maxArea = area
-    cv2.drawContours(imgContour, biggest, -1, (0, 255, 0), 10)
+    if biggest.size != 0:
+        cv2.drawContours(imgContour, biggest, -1, (0, 255, 0), 10)
     return biggest
 
 
-def getWarp(img, biggestContour):
-
-    width, height = img.shape[1], img.shape[0]
-    pts1 = biggest.reshape(4, 2).astype(np.float32)
-    pts2 = np.float32([[0, 0], [IMG_WIDTH, 0], [IMG_WIDTH, IMG_HEIGHT], [0, IMG_HEIGHT]])
+def getWarp(img, biggest):
+    if biggest.size == 0:
+        print("Hata: Geçerli bir kontur bulunamadı.")
+        return img  # Orijinal resmi döndür
+    pts1 = np.float32(biggest)
+    pts2 = np.float32([[0, 0], [IMG_WIDTH, 0], [0, IMG_HEIGHT], [IMG_WIDTH, IMG_HEIGHT]])
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
     imgOutput = cv2.warpPerspective(img, matrix, (IMG_WIDTH, IMG_HEIGHT))
     return imgOutput
 
+
 while True:
     success, img = cap.read()
     prep_dict = preprocess(img)
-    imgContour = prep_dict["Resized"].copy()#coppied the original img
-    biggest = getContours(prep_dict["Threshold"], imgContour)
+    imgContour = prep_dict["Resized"].copy()  # Orijinal resmi kopyaladık
+    imgThreshold = prep_dict["Threshold"]
+    biggest = getContours(imgThreshold)
+    print(biggest)
+    imgWarp = getWarp(img, biggest)  # Hata kontrolü burada yapılır
 
-    if biggest is not None and biggest.size != 0:
-        imgWarp = getWarp(img, biggest)
-        cv2.imshow('Result', imgWarp)
-    else:
-        cv2.imshow('Result', imgContour)
+    cv2.imshow("Warped Image", imgWarp)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
